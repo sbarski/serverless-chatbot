@@ -1,0 +1,69 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: serverless-chatbot
+
+provider:
+  name: aws
+  runtime: nodejs4.3
+  profile: serverless-chatbot
+  stage: dev
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - rekognition:DetectFaces
+      Resource: '*'
+    - Effect: "Allow"
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+      Resource: arn:aws:s3:::${self:custom.uploadBucket}/*
+    - Effect: "Allow"
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+      Resource: arn:aws:s3:::${self:custom.transformBucket}/*
+custom:
+  uploadBucket: ${self:service}-${self:provider.stage}-uploads
+  transformBucket: ${self:service}-${self:provider.stage}-transformed
+functions:
+  hello:
+    handler: handler.endpoint
+    events:
+      - http:
+          path: echo
+          method: post
+    environment:
+      POST_MESSAGE_URL: 'https://slack.com/api/chat.postMessage?'
+      BOT_ACCESS_TOKEN: 'xoxb-159279836768-FOst5DLfEzmQgkz7cte5qiIv'
+      VERIFICATION_TOKEN: 'wiM5uBXy2CcvIfTnyIdfhoVw'
+      UPLOAD_BUCKET: ${self:custom.uploadBucket}
+      SLACK_HOSTNAME: 'files.slack.com'
+      TEMP_FOLDER: '/tmp/'
+  faceswap:
+    handler: faceswap.execute
+    environment:
+      TEMP_FOLDER: '/tmp/'
+      OUTPUT_PREFIX: 'output-'
+      UPLOAD_BUCKET: ${self:custom.uploadBucket}
+      TRANSFORM_BUCKET: ${self:custom.transformBucket}
+    events:
+      - s3:
+          bucket: ${self:custom.uploadBucket}
+          event: s3:ObjectCreated:*
+  updateslack:
+    handler: slackupdate.execute
+    events:
+      - s3:
+          bucket: ${self:custom.transformBucket}
+          event: s3:ObjectCreated:*
