@@ -73,6 +73,8 @@ const updateStatusInSlack = function(filename, channel) {
 module.exports.endpoint = (event, context, callback) => {
   const request = JSON.parse(event.body);
 
+  console.log(request);
+
   if (request.event.type && request.event.type === 'message' && 
       request.event.subtype && request.event.subtype === 'file_share') {
 
