@@ -64,7 +64,6 @@ const updateStatusInSlack = function(filename, channel) {
       const URL = process.env.POST_MESSAGE_URL + qs.stringify(response);
 
       https.get(URL, (res) => {
-        const statusCode = res.statusCode;
         resolve();
       }) 
   });
@@ -86,7 +85,7 @@ module.exports.endpoint = (event, context, callback) => {
       .then(() => uploadToBucket(filename))
       .then(() => updateStatusInSlack(filename, channel))
       .then(() => callback(null, {statusCode: 200}))
-      .catch((err) => callback(err));
+      .catch(() => callback(null, {statusCode: 500}));
 
       return;
   }

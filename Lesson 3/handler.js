@@ -84,7 +84,7 @@ module.exports.endpoint = (event, context, callback) => {
       .then(() => uploadToBucket(filename))
       .then(() => updateStatusInSlack(filename, channel))
       .then(() => callback(null, {statusCode: 200}))
-      .catch((err) => callback(err));
+      .catch(() => callback(null, {statusCode: 500}));
 
       return;
   }

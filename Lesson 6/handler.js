@@ -4,7 +4,27 @@ const https = require('https');
 const fs = require('fs');
 const aws = require('aws-sdk');
 const qs = require('querystring');
+
 const s3 = new aws.S3();
+const db = new AWS.DynamoDB();
+
+const getBotAccessToken = function(team) {
+    return new Promise((resolve, reject) => {
+
+        var params = {
+            TableName: process.env.TEAMS_TABLE,
+            Key: {
+                "team_id" : {
+                    S: team
+                }
+            }
+        }
+
+        db.getItem(params, (err, data) =>{
+            console.log(data);
+        });
+    });
+}
 
 const uploadToBucket = function(filename) {
     var bodystream = fs.createReadStream(process.env.TEMP_FOLDER + filename);
@@ -73,8 +93,6 @@ const updateStatusInSlack = function(filename, channel) {
 module.exports.endpoint = (event, context, callback) => {
   const request = JSON.parse(event.body);
 
-  console.log(request);
-
   if (request.event.type && request.event.type === 'message' && 
       request.event.subtype && request.event.subtype === 'file_share') {
 
@@ -85,6 +103,7 @@ module.exports.endpoint = (event, context, callback) => {
     downloadFileToSystem(path, filename)
       .then(() => uploadToBucket(filename))
       .then(() => updateStatusInSlack(filename, channel))
+      .then(() => getBotAccessToken(request.team_id))
       .then(() => callback(null, {statusCode: 200}))
       .catch(() => callback(null, {statusCode: 500}));
 

@@ -33,10 +33,27 @@ provider:
         - s3:GetObject
         - s3:PutObject
       Resource: arn:aws:s3:::${self:custom.transformBucket}/*
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource:
+        - arn:aws:dynamodb:*:*:table/${self:service}-${self:provider.stage}-teams
 custom:
   uploadBucket: ${self:service}-${self:provider.stage}-uploads-ps
   transformBucket: ${self:service}-${self:provider.stage}-transformed-ps
 functions:
+  install:
+    handler: install.endpoint
+    events:
+      - http:
+          path: install
+          method: get
+    environment:
+      CLIENT_ID: '159801495122.160508499655'
+      CLIENT_SECRET: b3f939ef9af2a6c5cc848001f6bac147
+      SLACK_OAUTH: 'https://slack.com/api/oauth.access?'
+      TABLE_NAME: ${self:service}-${self:provider.stage}-teams
   hello:
     handler: handler.endpoint
     events:
@@ -73,3 +90,18 @@ functions:
       - s3:
           bucket: ${self:custom.transformBucket}
           event: s3:ObjectCreated:*
+resources:
+  Resources:
+    TeamsDynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      Properties: 
+        TableName: ${self:service}-${self:provider.stage}-teams
+        AttributeDefinitions: 
+          - AttributeName: team_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: team_id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1

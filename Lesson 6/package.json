@@ -1,0 +1,15 @@
+{
+  "name": "serverless-chatbot",
+  "version": "1.0.0",
+  "description": "Serverless Chatbot",
+  "main": "faceswap.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "gm": "^1.23.0",
+    "request": "^2.81.0"
+  }
+}
