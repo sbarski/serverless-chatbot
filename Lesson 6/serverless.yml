@@ -62,11 +62,10 @@ functions:
           method: post
     environment:
       POST_MESSAGE_URL: 'https://slack.com/api/chat.postMessage?'
-      BOT_ACCESS_TOKEN: 'xoxb-159279836768-FOst5DLfEzmQgkz7cte5qiIv'
-      VERIFICATION_TOKEN: 'wiM5uBXy2CcvIfTnyIdfhoVw'
       UPLOAD_BUCKET: ${self:custom.uploadBucket}
       SLACK_HOSTNAME: 'files.slack.com'
       TEMP_FOLDER: '/tmp/'
+      TEAMS_TABLE: ${self:service}-${self:provider.stage}-teams
   faceswap:
     handler: faceswap.execute
     environment:
