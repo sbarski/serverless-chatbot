@@ -8,8 +8,9 @@ const s3 = new aws.S3();
 
 const getSignedUrl = function(bucket, key) {
     return new Promise((resolve, reject) => {
-        const params = {Bucket: bucket, Key: key};
+        const params = {Bucket: bucket, Key: key, Expires: 604800};
         var url = s3.getSignedUrl('getObject', params);
+        console.log(url);
         resolve(url);
     });
 };
