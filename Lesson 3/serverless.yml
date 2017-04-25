@@ -25,7 +25,7 @@ provider:
         - s3:PutObject
       Resource: arn:aws:s3:::${self:custom.uploadBucket}/*
 custom:
-  uploadBucket: ${self:service}-${self:provider.stage}-uploads-ps
+  uploadBucket: ${self:service}-${self:provider.stage}-uploads-your-initials-here
 functions:
   hello:
     handler: handler.endpoint

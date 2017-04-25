@@ -40,8 +40,8 @@ provider:
       Resource:
         - arn:aws:dynamodb:*:*:table/${self:service}-${self:provider.stage}-teams
 custom:
-  uploadBucket: ${self:service}-${self:provider.stage}-uploads-ps
-  transformBucket: ${self:service}-${self:provider.stage}-transformed-ps
+  uploadBucket: ${self:service}-${self:provider.stage}-uploads-your-initials-here
+  transformBucket: ${self:service}-${self:provider.stage}-transformed-your-initials-here
 functions:
   install:
     handler: install.endpoint
