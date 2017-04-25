@@ -9,14 +9,14 @@ const s3 = new aws.S3();
 const getSignedUrl = function(bucket, key) {
     return new Promise((resolve, reject) => {
         const params = {Bucket: bucket, Key: key, Expires: 604800};
-        var url = s3.getSignedUrl('getObject', params);
+        const url = s3.getSignedUrl('getObject', params);
         resolve(url);
     });
 };
 
 const getShortUrl = function(url) {
     return new Promise((resolve, reject) => {
-        var req = {
+        const req = {
             uri: process.env.SHORTENER_API_URL + qs.stringify({key: process.env.SHORTENER_API_KEY}),
             method: 'POST', 
             json: true,

@@ -4,6 +4,8 @@ const https = require('https');
 const qs = require('querystring');
 
 module.exports.endpoint = (event, context, callback) => {
+    console.log('Received event', event);
+
     const request = {
         token: 'xoxb-159279836768-FOst5DLfEzmQgkz7cte5qiIv'
     }

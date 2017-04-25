@@ -11,7 +11,7 @@ const db = new aws.DynamoDB();
 
 const getBotAccessToken = function(team) {
     return new Promise((resolve, reject) => {
-        var params = {
+        const params = {
             TableName: process.env.TEAMS_TABLE,
             Key: {
                 "team_id": {
@@ -31,7 +31,9 @@ const getBotAccessToken = function(team) {
 };
 
 const downloadFileToSystem = function(accessToken, path, filename) {
-    var file = fs.createWriteStream(process.env.TEMP_FOLDER + filename);
+    console.log('Downloading image to temp storage');
+    
+    const file = fs.createWriteStream(process.env.TEMP_FOLDER + filename);
     const options = {
         hostname: process.env.SLACK_HOSTNAME,
         path: path,
@@ -54,7 +56,9 @@ const downloadFileToSystem = function(accessToken, path, filename) {
 };
 
 const uploadToBucket = function(filename) {
-    var bodystream = fs.createReadStream(process.env.TEMP_FOLDER + filename);
+    console.log('Uploading image to S3');
+
+    const bodystream = fs.createReadStream(process.env.TEMP_FOLDER + filename);
     
     return new Promise((resolve, reject) => {
         s3.putObject({
@@ -72,6 +76,8 @@ const uploadToBucket = function(filename) {
 };
 
 const updateStatusInSlack = function(accessToken, filename, channel) {
+    console.log('Sending status message to slack');
+    
     return new Promise((resolve, reject) => {
         const response = {
             token: accessToken,
@@ -87,22 +93,35 @@ const updateStatusInSlack = function(accessToken, filename, channel) {
 };
 
 module.exports.endpoint = (event, context, callback) => {
+    console.log('Received event', event);
+
     const request = JSON.parse(event.body);
     
-    if (request.event.type && request.event.type === 'message' 
-    && request.event.subtype && request.event.subtype === 'file_share') {
+    if (request.event.type && request.event.type === 'message' &&
+         request.event.subtype && request.event.subtype === 'file_share') {
             
-            const path = request.event.file.url_private_download;
-            const filename = request.event.file.name;
-            const channel = request.event.channel;
-            var accessToken = '';
-            
-            getBotAccessToken(request.team_id)
-                .then((token) => {accessToken = token; return downloadFileToSystem(accessToken, path, filename);})
-                .then(() => uploadToBucket(filename))
-                .then(() => updateStatusInSlack(accessToken, filename, channel))
-                .then(() => callback(null, {statusCode: 200}))
-                .catch(() => callback(null, {statusCode: 500}));
+        console.log('Processing uploaded file');
+
+        const path = request.event.file.url_private_download;
+        const filename = request.event.file.name;
+        const channel = request.event.channel;
+        let accessToken = '';
+        
+        getBotAccessToken(request.team_id)
+            .then((token) => {
+                accessToken = token;
+                return downloadFileToSystem(accessToken, path, filename);
+            })
+            .then(() => uploadToBucket(filename))
+            .then(() => updateStatusInSlack(accessToken, filename, channel))
+            .then(() => {
+                console.log('Returning result')
+                callback(null, { statusCode: 200 })
+            })
+            .catch((err) => {
+                console.log('Error', err);
+                callback(null, { statusCode: 500 })
+            });
             
         return;
     }

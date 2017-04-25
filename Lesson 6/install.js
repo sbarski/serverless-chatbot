@@ -26,7 +26,7 @@ const getOAuthToken = function(code) {
             code
         }
 
-        var url = process.env.SLACK_OAUTH + qs.stringify(params);
+        const url = process.env.SLACK_OAUTH + qs.stringify(params);
 
         request.get(url, (err, res, body) => {
             if (err || res.statusCode !== 200) {

@@ -6,25 +6,10 @@ const aws = require('aws-sdk');
 const qs = require('querystring');
 const s3 = new aws.S3();
 
-const uploadToBucket = function(filename) {
-    var bodystream = fs.createReadStream(process.env.TEMP_FOLDER + filename);
-    
-    return new Promise((resolve, reject) => {
-        s3.putObject({
-           Bucket: process.env.UPLOAD_BUCKET,
-           Key: filename,
-           Body: bodystream
-        }, function(error, data){
-           if (error){
-            return reject(error);
-           } 
-           return resolve();
-        });
-    });
-};
+const downloadFileToSystem = function (path, filename) {
+    console.log('Downloading image to temp storage');
 
-const downloadFileToSystem = function(path, filename) {
-    var file = fs.createWriteStream(process.env.TEMP_FOLDER + filename);
+    const file = fs.createWriteStream(process.env.TEMP_FOLDER + filename);
 
     const options = {
         hostname: process.env.SLACK_HOSTNAME,
@@ -43,7 +28,7 @@ const downloadFileToSystem = function(path, filename) {
 
             response.pipe(file);
 
-            file.on('finish', function() {
+            file.on('finish', function () {
                 file.close(() => resolve());
             });
         });
@@ -52,43 +37,79 @@ const downloadFileToSystem = function(path, filename) {
     })
 };
 
-const updateStatusInSlack = function(filename, channel) {
-  return new Promise((resolve, reject) => {
-  
-    const response = {
-        token: process.env.BOT_ACCESS_TOKEN,
-        channel: channel,
-        text: 'I am working on ' + filename + '... should be done soon.'
-      }
+const uploadToBucket = function (filename) {
+    console.log('Uploading image to S3');
 
-      const URL = process.env.POST_MESSAGE_URL + qs.stringify(response);
+    const bodystream = fs.createReadStream(process.env.TEMP_FOLDER + filename);
 
-      https.get(URL, (res) => {
-        resolve();
-      }) 
-  });
+    return new Promise((resolve, reject) => {
+        s3.putObject({
+            Bucket: process.env.UPLOAD_BUCKET,
+            Key: filename,
+            Body: bodystream
+        }, function (error, data) {
+            if (error) {
+                return reject(error);
+            }
+            return resolve();
+        });
+    });
+};
+
+const updateStatusInSlack = function (filename, channel) {
+    console.log('Sending status message to slack');
+
+    return new Promise((resolve, reject) => {
+        const response = {
+            token: process.env.BOT_ACCESS_TOKEN,
+            channel: channel,
+            text: 'I am working on ' + filename + '... should be done soon.'
+        }
+
+        const URL = process.env.POST_MESSAGE_URL + qs.stringify(response);
+
+        https.get(URL, (res) => {
+            resolve();
+        })
+    });
 }
 
 module.exports.endpoint = (event, context, callback) => {
-  const request = JSON.parse(event.body);
+    console.log('Received event', event);
 
-  console.log(request);
+    const request = JSON.parse(event.body);
 
-  if (request.event.type && request.event.type === 'message' && 
-      request.event.subtype && request.event.subtype === 'file_share') {
+    console.log(request);
 
-    const path = request.event.file.url_private_download;
-    const filename = request.event.file.name;
-    const channel = request.event.channel;
+    if (request.event.type && request.event.type === 'message' &&
+        request.event.subtype && request.event.subtype === 'file_share') {
 
-    downloadFileToSystem(path, filename)
-      .then(() => uploadToBucket(filename))
-      .then(() => updateStatusInSlack(filename, channel))
-      .then(() => callback(null, {statusCode: 200}))
-      .catch(() => callback(null, {statusCode: 500}));
+        console.log('Processing uploaded file');
 
-      return;
-  }
+        const path = request.event.file.url_private_download;
+        const filename = request.event.file.name;
+        const channel = request.event.channel;
 
-  callback(null, {statusCode: 200});
+        downloadFileToSystem(path, filename)
+            .then(() => uploadToBucket(filename))
+            .then(() => updateStatusInSlack(filename, channel))
+            .then(() => {
+                console.log('Returning result')
+                callback(null, {
+                    statusCode: 200
+                })
+            })
+            .catch((err) => {
+                console.log('Error', err);
+                callback(null, {
+                    statusCode: 500
+                })
+            });
+
+        return;
+    }
+
+    callback(null, {
+        statusCode: 200
+    });
 };
