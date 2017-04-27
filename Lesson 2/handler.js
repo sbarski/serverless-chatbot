@@ -45,5 +45,9 @@ module.exports.endpoint = (event, context, callback) => {
 
       callback(null, {statusCode: 200});
     }) 
+  } else {
+    // if Slack does not receive an HTTP 2xx within 3 seconds, it will retry 3 times using
+    // exponential backoff, so just return a 200 if the bot was not directly mentioned
+      callback(null, {statusCode: 200});
   }
 };
